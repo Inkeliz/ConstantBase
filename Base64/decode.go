@@ -1,35 +1,57 @@
+/**
+ *	Copyright (c) 2017 Inkeliz
+ *  Copyright (c) 2016 - 2017 Paragon Initiative Enterprises.
+ *  Copyright (c) 2014 Steve "Sc00bz" Thomas (steve at tobtu dot com)
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
 package ConstantBase64
 
-
-func Decode(b []byte) string {
-	var destination string
+func Decode(b []byte) []byte {
+	var destination []byte
+	var bLen = len(b)
 	var i int
 
-	strLen := len(b)
-	strByte := make([]byte, 0, strLen+(strLen%4))
-	strByte = append(strByte, b...)
+	bLen -= (((60 - int(b[bLen-1])) & (int(b[bLen-1]) - 62)) >> 8) & 1
+	bLen -= (((60 - int(b[bLen-1])) & (int(b[bLen-1]) - 62)) >> 8) & 1
 
-	if strByte[strLen-2] == 61 {
-		strLen--
+	for i = 0; i+4 <= bLen; i += 4 {
+		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12 | decode6BitsTo8(int(b[i+2]))<<6 | decode6BitsTo8(int(b[i+3]))
+
+		destination = append(destination, byte(val >> 16 & 255))
+		destination = append(destination,byte(val >> 8 & 255))
+		destination = append(destination,byte(val >> 0 & 255))
 	}
 
-	if strByte[strLen-1] == 61 {
-		strLen--
+	switch bLen - i {
+	case 2:
+		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12
+
+		destination= append(destination, byte(val >> 16 & 255))
+	case 3:
+		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12 | decode6BitsTo8(int(b[i+2]))<<6
+
+		destination = append(destination, byte(val >> 16 & 255))
+		destination = append(destination, byte(val >> 8 & 255))
 	}
 
-	for i = 0; i < strLen; i += 4 {
-		chuck := strByte[i:i+4]
-		c0 := decode6BitsTo8(int(chuck[0]))
-		c1 := decode6BitsTo8(int(chuck[1]))
-		c2 := decode6BitsTo8(int(chuck[2]))
-		c3 := decode6BitsTo8(int(chuck[3]))
-
-		destination += string(((c0 << 2) | (c1 >> 4)) & 255)
-		destination += string(((c1 << 4) | (c2 >> 2)) & 255)
-		destination += string(((c2 << 6) | c3) & 255)
-	}
-
-	return destination[:(strLen * 6) / 8]
+	return destination
 }
 
 func decode6BitsTo8(i int) int {
