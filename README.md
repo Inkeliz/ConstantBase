@@ -26,8 +26,3 @@ If you don't care about padding use `Encode` instead:
 In both cases, we use `Decode` to decode the Base64:
 
     Decoded := ConstantBase64.Decode(Encoded)
-
-<<<<<<< HEAD
-=======
-    
->>>>>>> origin/master
