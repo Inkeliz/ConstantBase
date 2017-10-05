@@ -23,8 +23,8 @@
  */
 package ConstantBase64
 
-func Encode(b []byte) string {
-	var destination string
+func Encode(b []byte) []byte {
+	var destination []byte
 	var i int
 
 	bLen := len(b)
@@ -32,42 +32,51 @@ func Encode(b []byte) string {
 	for i = 0; i+3 <= bLen; i += 3 {
 		val := int(b[i+0])<<16 | int(b[i+1])<<8 | int(b[i+2])
 
-		destination += encode8BitsTo6(val >> 18 & 63)
-		destination += encode8BitsTo6(val >> 12 & 63)
-		destination += encode8BitsTo6(val >> 6 & 63)
-		destination += encode8BitsTo6(val >> 0 & 63)
+		destination = append(destination, encode8BitsTo6(val >> 18 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 12 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 6 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 0 & 63))
 	}
 
 	switch bLen - i {
 	case 1:
 		val := int(b[i+0]) << 16
-		destination += encode8BitsTo6(val >> 18 & 63)
-		destination += encode8BitsTo6(val >> 12 & 63)
+		destination = append(destination, encode8BitsTo6(val >> 18 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 12 & 63))
 
 	case 2:
 		val := int(b[i+0])<<16 | int(b[i+1])<<8
-		destination += encode8BitsTo6(val >> 18 & 63)
-		destination += encode8BitsTo6(val >> 12 & 63)
-		destination += encode8BitsTo6(val >> 6 & 63)
+		destination = append(destination, encode8BitsTo6(val >> 18 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 12 & 63))
+		destination = append(destination, encode8BitsTo6(val >> 6 & 63))
 	}
 
 	return destination
 }
 
-func EncodeWithPad(b []byte) string {
+func EncodeWithPad(b []byte) []byte {
 	encoded := Encode(b)
 
-	switch len(encoded) % 4 {
+	switch len(encoded) & 3 {
 	case 2:
-		encoded += "=="
+		encoded = append(encoded, 0x3D)
+		fallthrough
 	case 3:
-		encoded += "="
+		encoded = append(encoded, 0x3D)
 	}
 
 	return encoded
 }
 
-func encode8BitsTo6(i int) string {
+func EncodeToString(b []byte) string {
+	return string(Encode(b))
+}
+
+func EncodeWithPadToString(b []byte) string {
+	return string(EncodeWithPad(b))
+}
+
+func encode8BitsTo6(i int) byte {
 	var diff = 65
 
 	diff += ((25 - i) >> 8) & 6
@@ -75,5 +84,5 @@ func encode8BitsTo6(i int) string {
 	diff -= ((61 - i) >> 8) & 15
 	diff += ((62 - i) >> 8) & 3
 
-	return string(diff + i)
+	return byte(diff + i)
 }

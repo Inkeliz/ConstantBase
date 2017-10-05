@@ -15,14 +15,17 @@ Download
 Usage
 =======
 
-For now we only support a Base64, to encode with padding use:
+For now we only support a Base64, but all bases will have the following functions:
 
-    Encoded := ConstantBase64.EncodeWithPad(Text)
+    encodedBytes := ConstantBase64.EncodeWithPad(text)
+    encodedString := ConstantBase64.EncodeWithPadToString(text)
 
 If you don't care about padding use `Encode` instead:
 
-    Encoded := ConstantBase64.Encode(Text)
+    encodedBytes := ConstantBase64.Encode(text)
+    encodedString := ConstantBase64.EncodeToString(text)
 
-In both cases, we use `Decode` to decode the Base64:
+To decode the data we have two functions:
 
-    Decoded := ConstantBase64.Decode(Encoded)
+    decodedBytes, err := ConstantBase64.Decode(encodedBytes)
+    decodedString, err := ConstantBase64.DecodeToString(encodedString)

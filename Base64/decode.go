@@ -23,35 +23,54 @@
  */
 package ConstantBase64
 
-func Decode(b []byte) []byte {
+import (
+	"errors"
+)
+
+func Decode(b []byte) ([]byte, error) {
 	var destination []byte
+	var i, err int
 	var bLen = len(b)
-	var i int
 
 	bLen -= (((60 - int(b[bLen-1])) & (int(b[bLen-1]) - 62)) >> 8) & 1
 	bLen -= (((60 - int(b[bLen-1])) & (int(b[bLen-1]) - 62)) >> 8) & 1
 
 	for i = 0; i+4 <= bLen; i += 4 {
-		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12 | decode6BitsTo8(int(b[i+2]))<<6 | decode6BitsTo8(int(b[i+3]))
+		c0, c1, c2, c3 := decode6BitsTo8(int(b[i+0])), decode6BitsTo8(int(b[i+1])), decode6BitsTo8(int(b[i+2])),	decode6BitsTo8(int(b[i+3]))
+		val := c0<<18 | c1<<12 | c2 <<6 | c3
+		err |= (c0 | c1 | c2 | c3) >> 8
 
 		destination = append(destination, byte(val >> 16 & 255))
-		destination = append(destination,byte(val >> 8 & 255))
-		destination = append(destination,byte(val >> 0 & 255))
+		destination = append(destination, byte(val >> 8 & 255))
+		destination = append(destination, byte(val >> 0 & 255))
 	}
 
 	switch bLen - i {
 	case 2:
-		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12
+		c0, c1 := decode6BitsTo8(int(b[i+0])), decode6BitsTo8(int(b[i+1]))
+		val := c0<<18 | c1<<12
+		err |= (c0 | c1) >> 8
 
 		destination= append(destination, byte(val >> 16 & 255))
 	case 3:
-		val := decode6BitsTo8(int(b[i+0]))<<18 | decode6BitsTo8(int(b[i+1]))<<12 | decode6BitsTo8(int(b[i+2]))<<6
+		c0, c1, c2 := decode6BitsTo8(int(b[i+0])), decode6BitsTo8(int(b[i+1])), decode6BitsTo8(int(b[i+2]))
+		val := c0<<18 | c1<<12 | c2 << 6
+		err |= (c0 | c1 | c2) >> 8
 
 		destination = append(destination, byte(val >> 16 & 255))
 		destination = append(destination, byte(val >> 8 & 255))
 	}
 
-	return destination
+	if err != 0 {
+		return nil, errors.New("invalid characters")
+	}
+
+	return destination, nil
+}
+
+func DecodeToString(b []byte) (string, error) {
+	destination, err := Decode(b)
+	return string(destination), err
 }
 
 func decode6BitsTo8(i int) int {
